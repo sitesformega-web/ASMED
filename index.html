@@ -44,6 +44,9 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
 .loader-back{position:absolute;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:50;font-size:14px;color:var(--accent)}
 .loader-circle{width:40px;height:40px;border-radius:50%;border:4px solid var(--accent);border-top-color:transparent;animation:spin 1s linear infinite}
 @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+/* carrito flotante */
+#cartBtn{position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;padding:12px 18px;border-radius:999px;font-weight:700;z-index:99;cursor:pointer}
+#cartSection{margin-top:40px;padding:12px;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(20,20,50,0.06)}
 @media(max-width:720px){.modal .row{flex-direction:column}.controls{flex-direction:column;align-items:stretch}input.search{width:100%}}
 </style>
 </head>
@@ -64,8 +67,14 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
         <div>Cargando productos...</div>
       </div>
     </div>
+    <div id="cartSection">
+      <h2>Carrito de pedidos</h2>
+      <div id="cartItems"></div>
+      <button id="sendCartBtn" class="btn btn-carrito">Enviar pedido por WhatsApp</button>
+    </div>
   </main>
 </div>
+<button id="cartBtn">0 Productos</button>
 
 <!-- Modal -->
 <div class="modal-back" id="modalBack" aria-hidden="true">
@@ -95,7 +104,7 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
 </div>
 
 <script>
-const url = "https://script.google.com/macros/s/AKfycbwv3yDBDgdiri4jErMve19FUJ9udPV-x31u1ZHT4BsW2i1e1G57oSUXvEu0rAb14Mab/exec";
+const url="https://script.google.com/macros/s/AKfycbwv3yDBDgdiri4jErMve19FUJ9udPV-x31u1ZHT4BsW2i1e1G57oSUXvEu0rAb14Mab/exec";
 let products=[], filtered=[], pedido=JSON.parse(localStorage.getItem('pedido'))||[];
 
 const grid=document.getElementById('grid');
@@ -112,6 +121,9 @@ const mCat=document.getElementById('mCat');
 const waBtn=document.getElementById('waBtn');
 const modalCarrito=document.getElementById('modalCarrito');
 const categoryButtons=document.getElementById('categoryButtons');
+const cartBtn=document.getElementById('cartBtn');
+const cartItems=document.getElementById('cartItems');
+const sendCartBtn=document.getElementById('sendCartBtn');
 
 async function loadProducts(){
   loader.style.display='flex';
@@ -129,6 +141,8 @@ async function loadProducts(){
   renderCategoryButtons();
   applyFilters();
   loader.style.display='none';
+  updateCartView();
+  updateCartButton();
 }
 
 function renderCategoryButtons(){
@@ -206,11 +220,34 @@ document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModalFn(); 
 function addToCart(id){
   const item=products.find(p=>p.id===id);
   if(!item) return;
-  const exists=pedido.find(p=>p.id===id);
-  if(!exists) pedido.push({id:item.id,name:item.name,code:item.code});
+  if(!pedido.find(p=>p.id===id)) pedido.push({id:item.id,name:item.name,code:item.code});
   localStorage.setItem('pedido',JSON.stringify(pedido));
-  alert(`${item.name} agregado al pedido (${pedido.length} items).`);
+  closeModalFn();
+  updateCartView();
+  updateCartButton();
 }
+
+function updateCartView(){
+  cartItems.innerHTML='';
+  pedido.forEach(p=>{
+    const div=document.createElement('div');
+    div.textContent=`${p.name} (Código: ${p.code})`;
+    cartItems.appendChild(div);
+  });
+}
+
+function updateCartButton(){
+  cartBtn.textContent=`${pedido.length} producto${pedido.length!==1?'s':''} seleccionado${pedido.length!==1?'s':''}`;
+}
+
+cartBtn.addEventListener('click',()=>{ document.getElementById('cartSection').scrollIntoView({behavior:'smooth'}); });
+
+sendCartBtn.addEventListener('click',()=>{
+  if(!pedido.length) return alert('No hay productos en el carrito');
+  const phone="595974294751";
+  const msg=encodeURIComponent('Hola, quiero hacer pedido con los siguientes productos:\n'+pedido.map(p=>`- ${p.name} (Código: ${p.code})`).join('\n'));
+  window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
+});
 
 function openWhatsApp(name,code){
   const phone="595974294751";
