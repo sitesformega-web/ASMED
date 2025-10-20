@@ -1,149 +1,215 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ASMED Catálogo Online</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:20px; background:#f9f9f9; }
-  h1 { text-align:center; margin-bottom:20px; }
-  #busqueda { width: 100%; padding:10px; margin-bottom:15px; font-size:16px; }
-  #categorias { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; justify-content:center; }
-  .categoria-btn { padding:10px 15px; background:#007bff; color:#fff; border:none; border-radius:8px; cursor:pointer; }
-  .categoria-btn.active { background:#0056b3; }
-  #productos { display:grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap:15px; }
-  .producto { background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); position:relative; }
-  .producto img { width:100%; height:150px; object-fit:cover; border-radius:8px; margin-bottom:10px; }
-  .producto h3 { margin:5px 0; font-size:18px; }
-  .producto p { font-size:14px; margin:5px 0; color:#555; }
-  .btns { display:flex; gap:5px; flex-wrap:wrap; margin-top:10px; }
-  .btn { flex:1; padding:8px; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
-  .btn-whatsapp { background:#25D366; color:#fff; }
-  .btn-carrito { background:#FFC107; color:#000; }
-  /* Modal */
-  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
-  .modal-content { background:#fff; padding:20px; border-radius:10px; width:90%; max-width:400px; position:relative; }
-  .close { position:absolute; top:10px; right:15px; cursor:pointer; font-size:20px; }
-  #carrito-btn { position:fixed; bottom:20px; right:20px; padding:12px 18px; background:#FF5722; color:#fff; border:none; border-radius:50px; cursor:pointer; font-size:16px; }
+:root{
+  --bg:#f6f7fb;
+  --card:#fff;
+  --accent:#0cb2ba;
+  --muted:#666;
+}
+body{font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:0;background:var(--bg);color:#222}
+.app{max-width:1100px;margin:24px auto;padding:16px}
+header{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
+h1{font-size:20px;margin:0}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;min-width:250px;box-sizing:border-box}
+.category-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.category-btn{padding:6px 12px;border-radius:999px;border:1px solid var(--accent);background:white;color:var(--accent);cursor:pointer;font-weight:600;font-size:13px;transition:0.2s}
+.category-btn.active{background:var(--accent);color:white}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(20,20,50,0.06);cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:160px}
+.thumb{height:100px;background:linear-gradient(135deg,#e9eefc,#fff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--muted)}
+.meta{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.cat{padding:4px 8px;border-radius:999px;background:#f0f4ff;color:var(--accent);font-weight:600;font-size:12px}
+.name{font-weight:700}
+.btns{display:flex;gap:5px;margin-top:10px}
+.btn{flex:1;padding:6px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+.btn-whatsapp{background:#25D366;color:#fff}
+.btn-carrito{background:#FFC107;color:#000}
+/* modal */
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:60}
+.modal{width:100%;max-width:720px;background:var(--card);border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,0.25)}
+.modal .row{display:flex;gap:12px}
+.modal .left{flex:1}
+.modal .right{width:220px}
+.close{border:none;background:none;font-size:18px;cursor:pointer;color:#444}
+.whatsapp-btn{display:inline-block;padding:10px 12px;border-radius:10px;background:#25D366;color:white;text-decoration:none;font-weight:700;margin-top:8px}
+.small{font-size:13px;color:var(--muted)}
+@media(max-width:720px){.modal .row{flex-direction:column}.controls{flex-direction:column;align-items:stretch}input.search{width:100%}}
 </style>
 </head>
 <body>
+<div class="app">
+  <header>
+    <h1>Distribuidora ASMED - Catálogo Online</h1>
+    <div class="controls">
+      <input class="search" placeholder="Buscar por nombre, código o descripción..." id="searchInput" />
+    </div>
+    <div class="category-buttons" id="categoryButtons"></div>
+  </header>
+  <main>
+    <div id="stats" class="small" style="margin-bottom:8px">Mostrando <span id="count">0</span> productos</div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
 
-<h1>Catálogo ASMED</h1>
-
-<input type="text" id="busqueda" placeholder="Buscar productos...">
-
-<div id="categorias"></div>
-
-<div id="productos"></div>
-
-<button id="carrito-btn" onclick="verCarrito()">🛒 Ver pedido</button>
-
-<!-- Modal de detalles -->
-<div id="modal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="cerrarModal()">&times;</span>
-    <h3 id="modal-nombre"></h3>
-    <p id="modal-descripcion"></p>
-    <p><strong>Stock:</strong> <span id="modal-stock"></span></p>
-    <div class="btns">
-      <button class="btn btn-whatsapp" id="modal-whatsapp">Consultar por WhatsApp</button>
-      <button class="btn btn-carrito" id="modal-carrito">Agregar al pedido</button>
+<!-- Modal -->
+<div class="modal-back" id="modalBack" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <strong id="mTitle">Producto</strong>
+      <button class="close" id="closeModal">✕</button>
+    </div>
+    <div class="row">
+      <div class="left">
+        <div style="height:200px;border-radius:8px;background:#fafbff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;margin-bottom:12px" id="mThumb">IMAGEN</div>
+        <div id="mDesc" class="small" style="line-height:1.4"></div>
+      </div>
+      <div class="right">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><span class="small">Código</span><div id="mCode" style="font-weight:700"></div></div>
+          <div><span class="small">Categoría</span><div id="mCat" class="small" style="font-weight:700;color:var(--accent)"></div></div>
+          <div style="display:flex;gap:8px;flex-direction:column;margin-top:10px">
+            <button id="modalCarrito" class="btn btn-carrito">Agregar al pedido</button>
+            <a id="waBtn" class="whatsapp-btn" href="#" target="_blank" rel="noopener">Consultar por WhatsApp</a>
+          </div>
+          <div style="margin-top:12px" class="small">* Demo de catálogo online.</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-const url = "https://script.google.com/macros/s/AKfycbxRsNmhb3aSVpmt9QCQuTEcckobSJCm4ks7Giw0__Z-o8flU8-tqgS8-Jd1LAVUdhAb/exec";
-let productos = [];
-let categorias = [];
+const url = "https://script.google.com/macros/s/AKfycbwv3yDBDgdiri4jErMve19FUJ9udPV-x31u1ZHT4BsW2i1e1G57oSUXvEu0rAb14Mab/exec";
+let products = [];
+let filtered = [];
 let pedido = JSON.parse(localStorage.getItem('pedido')) || [];
 
-async function cargarProductos() {
+const grid = document.getElementById('grid');
+const searchInput = document.getElementById('searchInput');
+const countSpan = document.getElementById('count');
+const modalBack = document.getElementById('modalBack');
+const closeModal = document.getElementById('closeModal');
+const mTitle = document.getElementById('mTitle');
+const mThumb = document.getElementById('mThumb');
+const mDesc = document.getElementById('mDesc');
+const mCode = document.getElementById('mCode');
+const mCat = document.getElementById('mCat');
+const waBtn = document.getElementById('waBtn');
+const modalCarrito = document.getElementById('modalCarrito');
+const categoryButtons = document.getElementById('categoryButtons');
+
+async function loadProducts(){
   const res = await fetch(url);
   const data = await res.json();
-  productos = data.filter(p => p.Mostrar === "✅");
-  renderCategorias();
-  renderProductos();
+  products = data.map(p=>({
+    id: p.ID,
+    code: p.ID,
+    name: p.Nombre,
+    category: p.Categoría,
+    desc: p.Descripción,
+    img: p.Imagen || "",
+    stock: p.Stock || "N/D"
+  }));
+  renderCategoryButtons();
+  applyFilters();
 }
 
-function renderCategorias() {
-  const container = document.getElementById("categorias");
-  container.innerHTML = "";
-  categorias = [...new Set(productos.map(p => p.Categoría))];
-  categorias.forEach(cat => {
-    const btn = document.createElement("button");
-    btn.textContent = cat;
-    btn.className = "categoria-btn";
-    btn.onclick = () => {
-      document.querySelectorAll(".categoria-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderProductos(cat);
-    };
-    container.appendChild(btn);
+function renderCategoryButtons(){
+  const cats = Array.from(new Set(products.map(p=>p.category))).sort();
+  categoryButtons.innerHTML='';
+  const allBtn = document.createElement('button');
+  allBtn.textContent='Todas';
+  allBtn.className='category-btn active';
+  allBtn.onclick=()=>{ document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active')); allBtn.classList.add('active'); applyFilters(); };
+  categoryButtons.appendChild(allBtn);
+
+  cats.forEach(c=>{
+    const btn = document.createElement('button');
+    btn.textContent=c;
+    btn.className='category-btn';
+    btn.onclick=()=>{ document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); applyFilters(c); };
+    categoryButtons.appendChild(btn);
   });
 }
 
-function renderProductos(filtroCat="") {
-  const contenedor = document.getElementById("productos");
-  const busqueda = document.getElementById("busqueda").value.toLowerCase();
-  contenedor.innerHTML = "";
-
-  productos
-    .filter(p => (!filtroCat || p.Categoría === filtroCat) && 
-                 (p.Nombre.toLowerCase().includes(busqueda) || p.Descripción.toLowerCase().includes(busqueda)))
-    .forEach(p => {
-      const div = document.createElement("div");
-      div.className = "producto";
-      div.innerHTML = `
-        <img src="${p.Imagen}" alt="${p.Nombre}">
-        <h3>${p.Nombre}</h3>
-        <p>${p.Descripción}</p>
+function renderList(list){
+  grid.innerHTML='';
+  countSpan.textContent=list.length;
+  if(!list.length){ grid.innerHTML='<div style="grid-column:1/-1;padding:28px;background:#fff;border-radius:10px;text-align:center">No se encontraron productos</div>'; return; }
+  list.forEach(p=>{
+    const card = document.createElement('div');
+    card.className='card';
+    card.tabIndex=0;
+    card.innerHTML=`
+      <div class="thumb">${p.name.split(' ').slice(0,3).join(' ')}</div>
+      <div style="flex:1">
+        <div class="meta"><div class="name">${p.name}</div><div class="cat">${p.category}</div></div>
+        <div style="margin-top:8px"><div class="small">${p.desc}</div></div>
         <div class="btns">
-          <button class="btn btn-whatsapp" onclick="abrirWhatsApp('${p.Nombre}')">WhatsApp</button>
-          <button class="btn btn-carrito" onclick="agregarAlPedido('${p.Nombre}')">Agregar al pedido</button>
+          <button class="btn btn-carrito" onclick="addToCart('${p.id}')">Agregar al pedido</button>
+          <button class="btn btn-whatsapp" onclick="openWhatsApp('${p.name}','${p.code}')">WhatsApp</button>
         </div>
-      `;
-      div.onclick = (e) => {
-        if (!e.target.classList.contains("btn")) abrirModal(p);
-      };
-      contenedor.appendChild(div);
-    });
+      </div>
+    `;
+    card.addEventListener('click',(e)=>{ if(!e.target.tagName.match(/BUTTON/i)) openModal(p); });
+    grid.appendChild(card);
+  });
 }
 
-document.getElementById("busqueda").addEventListener("input", () => renderProductos());
-
-/* Modal */
-function abrirModal(producto){
-  document.getElementById("modal-nombre").textContent = producto.Nombre;
-  document.getElementById("modal-descripcion").textContent = producto.Descripción;
-  document.getElementById("modal-stock").textContent = producto.Stock || "No disponible";
-  document.getElementById("modal-whatsapp").onclick = () => abrirWhatsApp(producto.Nombre);
-  document.getElementById("modal-carrito").onclick = () => agregarAlPedido(producto.Nombre);
-  document.getElementById("modal").style.display = "flex";
-}
-function cerrarModal(){ document.getElementById("modal").style.display = "none"; }
-
-/* WhatsApp individual */
-function abrirWhatsApp(nombre){
-  window.open(`https://wa.me/595974294751?text=${encodeURIComponent("Hola! Estoy interesado en " + nombre)}`, "_blank");
+function applyFilters(category){
+  const q = searchInput.value.trim().toLowerCase();
+  const cat = category || document.querySelector('.category-btn.active')?.textContent || '';
+  filtered = products.filter(p=>{
+    const inCat = !cat || cat==='Todas' || p.category===cat;
+    const hay = (p.name+' '+p.code+' '+p.desc).toLowerCase();
+    return inCat && hay.includes(q);
+  });
+  renderList(filtered);
 }
 
-/* Carrito / lista de intereses */
-function agregarAlPedido(nombre){
-  if(!pedido.includes(nombre)) pedido.push(nombre);
-  localStorage.setItem("pedido", JSON.stringify(pedido));
-  alert(`${nombre} agregado al pedido 🛒`);
+function openModal(p){
+  mTitle.textContent=p.name;
+  mThumb.textContent=p.code;
+  mDesc.textContent=p.desc + `\n\nStock disponible: ${p.stock}`;
+  mCode.textContent=p.code;
+  mCat.textContent=p.category;
+  const phone="595974294751";
+  const waMessage=encodeURIComponent(`Hola, quiero consultar por *${p.name}* (código: ${p.code}).`);
+  waBtn.href=`https://wa.me/${phone}?text=${waMessage}`;
+  modalCarrito.onclick=()=>{ addToCart(p.id); };
+  modalBack.style.display='flex';
+  modalBack.setAttribute('aria-hidden','false');
 }
 
-function verCarrito(){
-  if(pedido.length === 0){ alert("No hay productos en el pedido"); return; }
-  const texto = "Hola! Estoy interesado en los siguientes productos:\n- " + pedido.join("\n- ");
-  window.open(`https://wa.me/595974294751?text=${encodeURIComponent(texto)}`, "_blank");
+function closeModalFn(){ modalBack.style.display='none'; modalBack.setAttribute('aria-hidden','true'); }
+
+closeModal.addEventListener('click',closeModalFn);
+modalBack.addEventListener('click',(e)=>{ if(e.target===modalBack) closeModalFn(); });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModalFn(); });
+
+function addToCart(id){
+  const item = products.find(p=>p.id===id);
+  if(!item) return;
+  const exists = pedido.find(p=>p.id===id);
+  if(!exists) pedido.push({id:item.id,name:item.name,code:item.code});
+  localStorage.setItem('pedido',JSON.stringify(pedido));
+  alert(`${item.name} agregado al pedido (${pedido.length} items).`);
 }
 
-cargarProductos();
+function openWhatsApp(name,code){
+  const phone="595974294751";
+  const waMessage=encodeURIComponent(`Hola, quiero consultar por *${name}* (código: ${code}).`);
+  window.open(`https://wa.me/${phone}?text=${waMessage}`,'_blank');
+}
+
+searchInput.addEventListener('input',()=>applyFilters());
+loadProducts();
 </script>
-
 </body>
 </html>
