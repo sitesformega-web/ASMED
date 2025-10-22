@@ -14,7 +14,8 @@
 body{font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;margin:0;background:var(--bg);color:#222}
 .app{max-width:1100px;margin:24px auto;padding:16px}
 header{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
-h1{font-size:20px;margin:0}
+h1{font-size:22px;margin:0;display:flex;align-items:center;gap:10px}
+h1 img{height:42px;width:auto;vertical-align:middle}
 .controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;min-width:250px;box-sizing:border-box}
 .category-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
@@ -22,7 +23,8 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
 .category-btn.active{background:var(--accent);color:white}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;position:relative}
 .card{background:var(--card);border-radius:12px;padding:12px;box-shadow:0 6px 18px rgba(20,20,50,0.06);cursor:pointer;display:flex;flex-direction:column;gap:8px;min-height:160px;position:relative;overflow:hidden;transition:0.2s}
-.thumb{height:100px;background:linear-gradient(135deg,#e9eefc,#fff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--muted)}
+.thumb{height:120px;background:#f0f4ff;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover;border-radius:8px}
 .meta{display:flex;justify-content:space-between;align-items:center;font-size:13px}
 .cat{padding:4px 8px;border-radius:999px;background:#f0f4ff;color:var(--accent);font-weight:600;font-size:12px}
 .name{font-weight:700}
@@ -49,13 +51,22 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
 #cartSection{margin-top:40px;padding:12px;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(20,20,50,0.06)}
 .cart-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .cart-item button{background:red;color:#fff;border:none;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:12px}
-@media(max-width:720px){.modal .row{flex-direction:column}.controls{flex-direction:column;align-items:stretch}input.search{width:100%}}
+@media(max-width:720px){
+  .modal .row{flex-direction:column}
+  .controls{flex-direction:column;align-items:stretch}
+  input.search{width:100%}
+  h1{flex-direction:column;align-items:flex-start}
+  h1 img{height:36px}
+}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>ASMED - Catálogo Online</h1>
+    <h1>
+      <img src="https://github.com/sitesformega-web/ASMED/blob/main/PIC's/ASMED.png?raw=true" alt="Logo ASMED">
+      ASMED - Catálogo Online
+    </h1>
     <div class="controls">
       <input class="search" placeholder="Buscar por nombre, código o descripción..." id="searchInput" />
     </div>
@@ -87,7 +98,7 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
     </div>
     <div class="row">
       <div class="left">
-        <div style="height:200px;border-radius:8px;background:#fafbff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;margin-bottom:12px" id="mThumb">IMAGEN</div>
+        <div id="mThumb" style="height:200px;border-radius:8px;background:#fafbff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px"></div>
         <div id="mDesc" class="small" style="line-height:1.4"></div>
       </div>
       <div class="right">
@@ -127,6 +138,14 @@ const cartBtn=document.getElementById('cartBtn');
 const cartItems=document.getElementById('cartItems');
 const sendCartBtn=document.getElementById('sendCartBtn');
 
+function fixImageUrl(url){
+  if(!url) return "";
+  if(url.includes("github.com") && url.includes("/blob/")){
+    return url.replace("github.com","raw.githubusercontent.com").replace("/blob/","/").replace("?raw=true","");
+  }
+  return url;
+}
+
 async function loadProducts(){
   loader.style.display='flex';
   const res=await fetch(url);
@@ -137,7 +156,7 @@ async function loadProducts(){
     name:p.Nombre,
     category:p.Categoría,
     desc:p.Descripción,
-    img:p.Imagen||"",
+    img:fixImageUrl(p.Imagen),
     stock:p.Stock||"N/D"
   }));
   renderCategoryButtons();
@@ -173,7 +192,7 @@ function renderList(list){
     card.className='card';
     card.tabIndex=0;
     card.innerHTML=`
-      <div class="thumb">${p.name.split(' ').slice(0,3).join(' ')}</div>
+      <div class="thumb">${p.img ? `<img src="${p.img}" alt="${p.name}">` : p.name.split(' ').slice(0,3).join(' ')}</div>
       <div style="flex:1">
         <div class="meta"><div class="name">${p.name}</div><div class="cat">${p.category}</div></div>
         <div style="margin-top:8px"><div class="small">${p.desc}</div></div>
@@ -201,8 +220,8 @@ function applyFilters(category){
 
 function openModal(p){
   mTitle.textContent=p.name;
-  mThumb.textContent=p.code;
-  mDesc.textContent=p.desc+`\n\nStock disponible: ${p.stock}`;
+  mThumb.innerHTML=p.img?`<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:`<div>${p.code}</div>`;
+  mDesc.textContent=`${p.desc}\n\nStock disponible: ${p.stock}`;
   mCode.textContent=p.code;
   mCat.textContent=p.category;
   const phone="595974294751";
