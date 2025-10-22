@@ -42,14 +42,13 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
 .small{font-size:13px;color:var(--muted)}
 /* loader */
 .loader-back{position:absolute;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:50;font-size:14px;color:var(--accent)}
-.loader-circle{font-size:32px;animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.3);}}
-
+.loader-circle{font-size:36px;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
 /* carrito flotante */
 #cartBtn{position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;padding:12px 18px;border-radius:999px;font-weight:700;z-index:99;cursor:pointer}
 #cartSection{margin-top:40px;padding:12px;border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(20,20,50,0.06)}
-.cart-item{display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border-bottom:1px solid #eee}
-.cart-item button{background:red;color:white;padding:2px 6px;border-radius:4px;font-size:12px;border:none;cursor:pointer}
+.cart-item{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.cart-item button{background:red;color:#fff;border:none;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:12px}
 @media(max-width:720px){.modal .row{flex-direction:column}.controls{flex-direction:column;align-items:stretch}input.search{width:100%}}
 </style>
 </head>
@@ -75,7 +74,7 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
       <div id="cartItems"></div>
       <button id="sendCartBtn" class="btn btn-carrito">Enviar pedido por WhatsApp</button>
     </div>
-</main>
+  </main>
 </div>
 <button id="cartBtn">0 Productos</button>
 
@@ -95,7 +94,7 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
         <div style="display:flex;flex-direction:column;gap:10px">
           <div><span class="small">Código</span><div id="mCode" style="font-weight:700"></div></div>
           <div><span class="small">Categoría</span><div id="mCat" class="small" style="font-weight:700;color:var(--accent)"></div></div>
-          <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+          <div style="display:flex;gap:8px;flex-direction:column;margin-top:10px">
             <button id="modalCarrito" class="btn btn-carrito">Agregar al pedido</button>
             <a id="waBtn" class="whatsapp-btn" href="#" target="_blank" rel="noopener">Consultar por WhatsApp</a>
           </div>
@@ -107,11 +106,9 @@ input.search{padding:10px 12px;border-radius:8px;border:1px solid #ddd;flex:1;mi
 </div>
 
 <script>
-// ---------- CONFIG ----------
-const execUrl="https://script.google.com/macros/s/AKfycbwv3yDBDgdiri4jErMve19FUJ9udPV-x31u1ZHT4BsW2i1e1G57oSUXvEu0rAb14Mab/exec";
+const url="https://script.google.com/macros/s/AKfycbwv3yDBDgdiri4jErMve19FUJ9udPV-x31u1ZHT4BsW2i1e1G57oSUXvEu0rAb14Mab/exec";
 let products=[], filtered=[], pedido=JSON.parse(localStorage.getItem('pedido'))||[];
 
-// ---------- DOM ----------
 const grid=document.getElementById('grid');
 const loader=document.getElementById('loader');
 const searchInput=document.getElementById('searchInput');
@@ -130,32 +127,39 @@ const cartBtn=document.getElementById('cartBtn');
 const cartItems=document.getElementById('cartItems');
 const sendCartBtn=document.getElementById('sendCartBtn');
 
-// ---------- FETCH DATA ----------
-fetch(execUrl)
-.then(res=>res.json())
-.then(data=>{
-  products=data;
-  filtered=products.slice();
-  populateCategories();
-  renderList(filtered);
-  updateCartDisplay();
+async function loadProducts(){
+  loader.style.display='flex';
+  const res=await fetch(url);
+  const data=await res.json();
+  products=data.map(p=>({
+    id:p.ID,
+    code:p.ID,
+    name:p.Nombre,
+    category:p.Categoría,
+    desc:p.Descripción,
+    img:p.Imagen||"",
+    stock:p.Stock||"N/D"
+  }));
+  renderCategoryButtons();
+  applyFilters();
   loader.style.display='none';
-})
-.catch(err=>{console.error(err);loader.innerHTML='Error al cargar productos';});
+  updateCartView();
+  updateCartButton();
+}
 
-// ---------- FUNCIONES ----------
-function populateCategories(){
+function renderCategoryButtons(){
   const cats=Array.from(new Set(products.map(p=>p.category))).sort();
-  cats.forEach(cat=>{
+  categoryButtons.innerHTML='';
+  const allBtn=document.createElement('button');
+  allBtn.textContent='Todas';
+  allBtn.className='category-btn active';
+  allBtn.onclick=()=>{ document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active')); allBtn.classList.add('active'); applyFilters(); };
+  categoryButtons.appendChild(allBtn);
+  cats.forEach(c=>{
     const btn=document.createElement('button');
-    btn.textContent=cat;
+    btn.textContent=c;
     btn.className='category-btn';
-    btn.addEventListener('click',()=>{
-      document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      filtered=products.filter(p=>p.category===cat);
-      renderList(filtered);
-    });
+    btn.onclick=()=>{ document.querySelectorAll('.category-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); applyFilters(c); };
     categoryButtons.appendChild(btn);
   });
 }
@@ -163,7 +167,7 @@ function populateCategories(){
 function renderList(list){
   grid.innerHTML='';
   countSpan.textContent=list.length;
-  if(!list.length){grid.innerHTML='<div style="grid-column:1/-1;padding:28px;background:#fff;border-radius:10px;text-align:center">No se encontraron productos</div>';return;}
+  if(!list.length){ grid.innerHTML='<div style="grid-column:1/-1;padding:28px;background:#fff;border-radius:10px;text-align:center">No se encontraron productos</div>'; return; }
   list.forEach(p=>{
     const card=document.createElement('div');
     card.className='card';
@@ -173,69 +177,96 @@ function renderList(list){
       <div style="flex:1">
         <div class="meta"><div class="name">${p.name}</div><div class="cat">${p.category}</div></div>
         <div style="margin-top:8px"><div class="small">${p.desc}</div></div>
+        <div class="btns">
+          <button class="btn btn-carrito" onclick="addToCart('${p.id}')">Agregar al pedido</button>
+          <button class="btn btn-whatsapp" onclick="openWhatsApp('${p.name}','${p.code}')">WhatsApp</button>
+        </div>
       </div>
     `;
-    card.addEventListener('click',()=>openModal(p));
+    card.addEventListener('click',(e)=>{ if(!e.target.tagName.match(/BUTTON/i)) openModal(p); });
     grid.appendChild(card);
   });
 }
 
-// ---------- MODAL ----------
-let currentProduct=null;
-function openModal(p){
-  currentProduct=p;
-  mTitle.textContent=p.name;
-  mThumb.textContent=p.code;
-  mDesc.textContent=p.desc+'\n\nStock disponible: '+p.stock;
-  mCode.textContent=p.code;
-  mCat.textContent=p.category;
-  const waMsg=encodeURIComponent(`Hola, quiero consultar por *${p.name}* (código: ${p.code}).`);
-  const phone="595974294751";
-  waBtn.href=`https://wa.me/${phone}?text=${waMsg}`;
-  modalBack.style.display='flex';
-  modalBack.setAttribute('aria-hidden','false');
-}
-closeModal.addEventListener('click',()=>{modalBack.style.display='none'; modalBack.setAttribute('aria-hidden','true');});
-modalBack.addEventListener('click',(e)=>{if(e.target===modalBack){modalBack.style.display='none'; modalBack.setAttribute('aria-hidden','true');}});
-
-// ---------- CARRITO ----------
-function updateCartDisplay(){
-  cartItems.innerHTML='';
-  pedido.forEach((p,i)=>{
-    const div=document.createElement('div');
-    div.className='cart-item';
-    div.innerHTML=`${p.name} <button data-index="${i}">Eliminar</button>`;
-    div.querySelector('button').addEventListener('click',()=>{pedido.splice(i,1); saveCart(); updateCartDisplay();});
-    cartItems.appendChild(div);
-  });
-  cartBtn.textContent=`${pedido.length} Productos`;
-}
-
-function saveCart(){localStorage.setItem('pedido',JSON.stringify(pedido));}
-
-modalCarrito.addEventListener('click',()=>{
-  if(currentProduct && !pedido.find(p=>p.id===currentProduct.id)){pedido.push(currentProduct); saveCart(); updateCartDisplay();}
-  modalBack.style.display='none';
-});
-
-cartBtn.addEventListener('click',()=>{document.getElementById('cartSection').scrollIntoView({behavior:'smooth'});});
-
-sendCartBtn.addEventListener('click',()=>{
-  if(!pedido.length)return alert('El carrito está vacío');
-  let msg='Hola, quisiera hacer el siguiente pedido:\n';
-  pedido.forEach(p=>{msg+=`- ${p.name} (código: ${p.code})\n`;});
-  const phone="595974294751";
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-});
-
-searchInput.addEventListener('input',()=>{applyFilters();});
-
-function applyFilters(){
+function applyFilters(category){
   const q=searchInput.value.trim().toLowerCase();
-  filtered=products.filter(p=>p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q));
+  const cat=category||document.querySelector('.category-btn.active')?.textContent||'';
+  filtered=products.filter(p=>{
+    const inCat=!cat||cat==='Todas'||p.category===cat;
+    const hay=(p.name+' '+p.code+' '+p.desc).toLowerCase();
+    return inCat&&hay.includes(q);
+  });
   renderList(filtered);
 }
 
+function openModal(p){
+  mTitle.textContent=p.name;
+  mThumb.textContent=p.code;
+  mDesc.textContent=p.desc+`\n\nStock disponible: ${p.stock}`;
+  mCode.textContent=p.code;
+  mCat.textContent=p.category;
+  const phone="595974294751";
+  const waMessage=encodeURIComponent(`Hola, quiero consultar por *${p.name}* (código: ${p.code}).`);
+  waBtn.href=`https://wa.me/${phone}?text=${waMessage}`;
+  modalCarrito.onclick=()=>{ addToCart(p.id); };
+  modalBack.style.display='flex';
+  modalBack.setAttribute('aria-hidden','false');
+}
+
+function closeModalFn(){ modalBack.style.display='none'; modalBack.setAttribute('aria-hidden','true'); }
+
+closeModal.addEventListener('click',closeModalFn);
+modalBack.addEventListener('click',(e)=>{ if(e.target===modalBack) closeModalFn(); });
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') closeModalFn(); });
+
+function addToCart(id){
+  const item=products.find(p=>p.id===id);
+  if(!item) return;
+  if(!pedido.find(p=>p.id===id)) pedido.push({id:item.id,name:item.name,code:item.code});
+  localStorage.setItem('pedido',JSON.stringify(pedido));
+  closeModalFn();
+  updateCartView();
+  updateCartButton();
+}
+
+function removeFromCart(id){
+  pedido=pedido.filter(p=>p.id!==id);
+  localStorage.setItem('pedido',JSON.stringify(pedido));
+  updateCartView();
+  updateCartButton();
+}
+
+function updateCartView(){
+  cartItems.innerHTML='';
+  pedido.forEach(p=>{
+    const div=document.createElement('div');
+    div.className='cart-item';
+    div.innerHTML=`${p.name} (Código: ${p.code}) <button onclick="removeFromCart('${p.id}')">X</button>`;
+    cartItems.appendChild(div);
+  });
+}
+
+function updateCartButton(){
+  cartBtn.textContent=`${pedido.length} producto${pedido.length!==1?'s':''} seleccionado${pedido.length!==1?'s':''}`;
+}
+
+cartBtn.addEventListener('click',()=>{ document.getElementById('cartSection').scrollIntoView({behavior:'smooth'}); });
+
+sendCartBtn.addEventListener('click',()=>{
+  if(!pedido.length) return alert('No hay productos en el carrito');
+  const phone="595974294751";
+  const msg=encodeURIComponent('Hola, quiero hacer pedido con los siguientes productos:\n'+pedido.map(p=>`- ${p.name} (Código: ${p.code})`).join('\n'));
+  window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
+});
+
+function openWhatsApp(name,code){
+  const phone="595974294751";
+  const waMessage=encodeURIComponent(`Hola, quiero consultar por *${name}* (código: ${code}).`);
+  window.open(`https://wa.me/${phone}?text=${waMessage}`,'_blank');
+}
+
+searchInput.addEventListener('input',()=>applyFilters());
+loadProducts();
 </script>
 </body>
 </html>
