@@ -27,7 +27,6 @@ body{
 
 .app{max-width:1200px;margin:24px auto;padding:16px}
 
-/* header */
 header{display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
 h1{
   font-size:22px;
@@ -51,7 +50,6 @@ input.search{
   font-size:14px;
 }
 
-/* layout */
 .shell{
   display:grid;
   grid-template-columns:220px 1fr 320px;
@@ -82,7 +80,6 @@ input.search{
 .sidebar-scroll::-webkit-scrollbar{width:10px}
 .sidebar-scroll::-webkit-scrollbar-thumb{background:#e8e8ef;border-radius:999px}
 
-/* categories */
 .category-buttons{display:flex;gap:8px;flex-wrap:wrap}
 .category-btn{
   padding:6px 12px;
@@ -99,7 +96,6 @@ input.search{
 }
 .category-btn.active{background:var(--accent);color:white}
 
-/* grid cards */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
@@ -151,7 +147,6 @@ input.search{
   line-height:1.35;
 }
 
-/* buttons visible */
 .btns{
   display:flex;
   gap:8px;
@@ -173,7 +168,6 @@ input.search{
 }
 .btn-carrito{background:var(--accent);color:#fff}
 
-/* text */
 .small{
   font-size:12.5px;
   color:#6f6f78;
@@ -181,7 +175,6 @@ input.search{
   font-weight:400;
 }
 
-/* loader */
 .loader-back{
   position:absolute;
   inset:0;
@@ -201,7 +194,6 @@ input.search{
   50%{transform:scale(1.3)}
 }
 
-/* cart */
 #cartItems,
 #cartItemsMobile{
   display:flex;
@@ -235,7 +227,6 @@ input.search{
   color:var(--muted);
 }
 
-/* floating mobile buttons */
 .fab-row{
   position:fixed;
   left:16px;
@@ -258,7 +249,6 @@ input.search{
   font-family:inherit;
 }
 
-/* drawers */
 .drawer-back{
   position:fixed;
   inset:0;
@@ -295,7 +285,6 @@ input.search{
 }
 .drawer-body{padding:12px 14px;max-height:70vh;overflow:auto}
 
-/* modal */
 .modal-back{
   position:fixed;
   inset:0;
@@ -308,7 +297,7 @@ input.search{
 }
 .modal{
   width:100%;
-  max-width:720px;
+  max-width:760px;
   background:var(--card);
   border-radius:14px;
   padding:18px;
@@ -318,7 +307,47 @@ input.search{
 .modal .left{flex:1}
 .modal .right{width:220px}
 
-/* footer */
+.modal-main-image{
+  height:260px;
+  border-radius:10px;
+  background:#fafbff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  margin-bottom:12px;
+}
+.modal-main-image img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:10px;
+}
+.modal-gallery{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.modal-gallery-item{
+  width:64px;
+  height:64px;
+  border-radius:10px;
+  overflow:hidden;
+  border:2px solid transparent;
+  background:#fafbff;
+  cursor:pointer;
+  padding:0;
+}
+.modal-gallery-item.active{
+  border-color:var(--accent);
+}
+.modal-gallery-item img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
 .footer{
   margin-top:28px;
   background:var(--accent);
@@ -357,7 +386,6 @@ input.search{
   transform:translateY(-1px);
 }
 
-/* responsive */
 @media(max-width:980px){
   .shell{grid-template-columns:200px 1fr 300px;}
 }
@@ -373,6 +401,7 @@ input.search{
   input.search{width:100%}
   .modal .row{flex-direction:column}
   .modal .right{width:auto}
+  .modal-main-image{height:220px}
 }
 </style>
 </head>
@@ -480,13 +509,15 @@ input.search{
     </div>
     <div class="row">
       <div class="left">
-        <div id="mThumb" style="height:200px;border-radius:8px;background:#fafbff;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:12px"></div>
+        <div id="mThumb" class="modal-main-image"></div>
+        <div id="mGallery" class="modal-gallery" style="margin-bottom:12px;"></div>
         <div id="mDesc" class="small" style="line-height:1.4"></div>
       </div>
       <div class="right">
         <div style="display:flex;flex-direction:column;gap:10px">
           <div><span class="small">Código</span><div id="mCode" style="font-weight:600"></div></div>
           <div><span class="small">Categoría</span><div id="mCat" class="small" style="font-weight:600;color:var(--accent)"></div></div>
+          <div><span class="small">Stock</span><div id="mStock" class="small" style="font-weight:600"></div></div>
           <div style="display:flex;gap:8px;flex-direction:column;margin-top:10px">
             <button id="modalCarrito" class="btn btn-carrito">Agregar al carrito</button>
           </div>
@@ -498,12 +529,17 @@ input.search{
 </div>
 
 <script>
-const url="https://script.google.com/macros/s/AKfycbwv3yDBDgdiri4jErMve19FUJ9udPV-x31u1ZHT4BsW2i1e1G57oSUXvEu0rAb14Mab/exec";
-const CONFIG = { phone: "595971506233" };
+const CATALOG_URL = "https://script.google.com/macros/s/AKfycbwv3yDBDgdiri4jErMve19FUJ9udPV-x31u1ZHT4BsW2i1e1G57oSUXvEu0rAb14Mab/exec";
+const CONFIG = {
+  phone: "595971506233"
+};
 
 let products = [];
 let filtered = [];
 let pedido = JSON.parse(localStorage.getItem('pedido')) || [];
+let activeCategory = 'Todas';
+let currentModalProduct = null;
+let currentModalImage = '';
 
 const grid = document.getElementById('grid');
 const loader = document.getElementById('loader');
@@ -514,9 +550,11 @@ const modalBack = document.getElementById('modalBack');
 const closeModal = document.getElementById('closeModal');
 const mTitle = document.getElementById('mTitle');
 const mThumb = document.getElementById('mThumb');
+const mGallery = document.getElementById('mGallery');
 const mDesc = document.getElementById('mDesc');
 const mCode = document.getElementById('mCode');
 const mCat = document.getElementById('mCat');
+const mStock = document.getElementById('mStock');
 const modalCarrito = document.getElementById('modalCarrito');
 
 const categoryButtons = document.getElementById('categoryButtons');
@@ -547,66 +585,117 @@ function fixImageUrl(url){
   return url;
 }
 
+function splitGallery(value){
+  return String(value || '')
+    .split(/\r?\n/)
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return !!s; });
+}
+
+function uniq(arr){
+  const map = {};
+  const out = [];
+
+  arr.forEach(function(item){
+    const clean = String(item || '').trim();
+    if(clean && !map[clean]){
+      map[clean] = true;
+      out.push(clean);
+    }
+  });
+
+  return out;
+}
+
+function getProductGallery(raw){
+  const fromArray = Array.isArray(raw.galeriaArray) ? raw.galeriaArray : [];
+  const fromText = splitGallery(raw['Galería'] || '');
+  const cover = raw.Imagen ? [raw.Imagen] : [];
+
+  return uniq(
+    cover
+      .concat(fromArray)
+      .concat(fromText)
+      .map(fixImageUrl)
+      .filter(Boolean)
+  );
+}
+
+function mapProduct(raw){
+  const gallery = getProductGallery(raw);
+  const cover = fixImageUrl(raw.Imagen || '') || gallery[0] || '';
+
+  return {
+    id: String(raw.ID || '').trim(),
+    code: String(raw.ID || '').trim(),
+    name: String(raw.Nombre || '').trim(),
+    category: String(raw['Categoría'] || '').trim(),
+    desc: String(raw['Descripción'] || '').trim(),
+    img: cover,
+    gallery: gallery,
+    stock: String(raw.Stock || 'N/D').trim() || 'N/D'
+  };
+}
+
 async function loadProducts(){
   loader.style.display = 'flex';
-  const res = await fetch(url);
-  const data = await res.json();
 
-  products = data.map(p => ({
-    id: p.ID,
-    code: p.ID,
-    name: p.Nombre,
-    category: p.Categoría,
-    desc: p.Descripción,
-    img: fixImageUrl(p.Imagen),
-    stock: p.Stock || "N/D"
-  }));
+  try{
+    const res = await fetch(CATALOG_URL, { cache: 'no-store' });
+    const data = await res.json();
 
-  renderCategoryButtons();
-  applyFilters();
-  loader.style.display = 'none';
-  updateCartView();
-  updateCartCounts();
+    if(!Array.isArray(data)){
+      throw new Error('La respuesta del catálogo no es válida.');
+    }
+
+    products = data.map(mapProduct);
+
+    renderCategoryButtons();
+    applyFilters();
+    updateCartView();
+    updateCartCounts();
+  }catch(err){
+    console.error(err);
+    grid.innerHTML = '<div style="grid-column:1/-1;padding:28px;background:#fff;border-radius:10px;text-align:center">No se pudieron cargar los productos.</div>';
+  }finally{
+    loader.style.display = 'none';
+  }
 }
 
 function renderCategoryButtons(){
-  const cats = Array.from(new Set(products.map(p => p.category))).sort();
+  const cats = Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort();
 
   categoryButtons.innerHTML = '';
   categoryButtonsMobile.innerHTML = '';
 
-  const makeBtn = (label, isActive = false, onClick) => {
+  const makeBtn = (label, isActive, onClick) => {
     const btn = document.createElement('button');
+    btn.type = 'button';
     btn.textContent = label;
     btn.className = 'category-btn' + (isActive ? ' active' : '');
-    btn.onclick = onClick;
+    btn.addEventListener('click', onClick);
     return btn;
   };
 
-  const activate = (label) => {
-    document.querySelectorAll('.category-btn').forEach(b => {
-      if (b.textContent === label) b.classList.add('active');
-      else b.classList.remove('active');
-    });
-  };
-
-  const allHandler = () => {
-    activate('Todas');
-    applyFilters('Todas');
-    closeDrawers();
-  };
-
-  categoryButtons.appendChild(makeBtn('Todas', true, allHandler));
-  categoryButtonsMobile.appendChild(makeBtn('Todas', true, allHandler));
-
-  cats.forEach(c => {
+  const renderBoth = (label) => {
     const handler = () => {
-      activate(c);
-      applyFilters(c);
+      activeCategory = label;
+      syncActiveCategoryButtons();
+      applyFilters();
       closeDrawers();
     };
-    categoryButtons.appendChild(makeBtn(c, false, handler));
-    categoryButtonsMobile.appendChild(makeBtn(c, false, handler));
+
+    categoryButtons.appendChild(makeBtn(label, label === activeCategory, handler));
+    categoryButtonsMobile.appendChild(makeBtn(label, label === activeCategory, handler));
+  };
+
+  renderBoth('Todas');
+  cats.forEach(renderBoth);
+}
+
+function syncActiveCategoryButtons(){
+  document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent === activeCategory);
   });
 }
 
@@ -625,49 +714,90 @@ function renderList(list){
     card.tabIndex = 0;
 
     card.innerHTML = `
-      <div class="thumb">${p.img ? `<img src="${p.img}" alt="${p.name}">` : p.name.split(' ').slice(0,3).join(' ')}</div>
+      <div class="thumb">${p.img ? `<img src="${p.img}" alt="${escapeHtml(p.name)}">` : escapeHtml(p.name.split(' ').slice(0,3).join(' '))}</div>
       <div style="flex:1">
         <div class="meta">
-          <div class="name">${p.name}</div>
-          <div class="cat">${p.category}</div>
+          <div class="name">${escapeHtml(p.name)}</div>
+          <div class="cat">${escapeHtml(p.category || 'Sin categoría')}</div>
         </div>
-        <div style="margin-top:8px"><div class="small">${p.desc}</div></div>
+        <div style="margin-top:8px"><div class="small">${escapeHtml(truncateText(p.desc, 110))}</div></div>
         <div class="btns">
-          <button class="btn btn-carrito" onclick="addToCart('${p.id}')">Agregar al carrito</button>
+          <button class="btn btn-carrito" type="button" onclick="event.stopPropagation(); addToCart('${escapeAttr(p.id)}')">Agregar al carrito</button>
         </div>
       </div>
     `;
 
     card.addEventListener('click', (e) => {
-      if(!e.target.tagName.match(/BUTTON/i)) openModal(p);
+      if(!e.target.closest('button')) openModal(p);
+    });
+
+    card.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        openModal(p);
+      }
     });
 
     grid.appendChild(card);
   });
 }
 
-function applyFilters(category){
+function applyFilters(){
   const q = searchInput.value.trim().toLowerCase();
-  const cat = category || document.querySelector('.category-btn.active')?.textContent || '';
 
   filtered = products.filter(p => {
-    const inCat = !cat || cat === 'Todas' || p.category === cat;
-    const hay = (p.name + ' ' + p.code + ' ' + p.desc).toLowerCase();
+    const inCat = !activeCategory || activeCategory === 'Todas' || p.category === activeCategory;
+    const hay = [p.name, p.code, p.desc, p.category, p.stock].join(' ').toLowerCase();
     return inCat && hay.includes(q);
   });
 
   renderList(filtered);
 }
 
-function openModal(p){
-  mTitle.textContent = p.name;
-  mThumb.innerHTML = p.img
-    ? `<img src="${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`
-    : `<div>${p.code}</div>`;
+function renderModalGallery(product, activeImage){
+  const gallery = product.gallery && product.gallery.length
+    ? product.gallery
+    : (product.img ? [product.img] : []);
 
-  mDesc.textContent = `${p.desc}\n\nStock disponible: ${p.stock}`;
-  mCode.textContent = p.code;
-  mCat.textContent = p.category;
+  mGallery.innerHTML = '';
+
+  if(!gallery.length){
+    return;
+  }
+
+  gallery.forEach(url => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'modal-gallery-item' + (url === activeImage ? ' active' : '');
+    btn.innerHTML = `<img src="${url}" alt="${escapeAttr(product.name)}">`;
+    btn.addEventListener('click', function(){
+      currentModalImage = url;
+      renderModalMainImage(product, currentModalImage);
+      renderModalGallery(product, currentModalImage);
+    });
+    mGallery.appendChild(btn);
+  });
+}
+
+function renderModalMainImage(product, imageUrl){
+  if(imageUrl){
+    mThumb.innerHTML = `<img src="${imageUrl}" alt="${escapeAttr(product.name)}">`;
+  } else {
+    mThumb.innerHTML = `<div>${escapeHtml(product.code || product.name)}</div>`;
+  }
+}
+
+function openModal(p){
+  currentModalProduct = p;
+  currentModalImage = p.img || (p.gallery && p.gallery[0]) || '';
+
+  mTitle.textContent = p.name;
+  renderModalMainImage(p, currentModalImage);
+  renderModalGallery(p, currentModalImage);
+  mDesc.textContent = p.desc || 'Sin descripción.';
+  mCode.textContent = p.code || '-';
+  mCat.textContent = p.category || 'Sin categoría';
+  mStock.textContent = p.stock || 'N/D';
 
   modalCarrito.onclick = () => { addToCart(p.id); };
   modalBack.style.display = 'flex';
@@ -677,6 +807,8 @@ function openModal(p){
 function closeModalFn(){
   modalBack.style.display = 'none';
   modalBack.setAttribute('aria-hidden','true');
+  currentModalProduct = null;
+  currentModalImage = '';
 }
 
 closeModal.addEventListener('click', closeModalFn);
@@ -733,10 +865,10 @@ function updateCartView(){
       div.className = 'cart-item';
       div.innerHTML = `
         <div style="font-weight:600;font-size:13px;line-height:1.2">
-          ${p.name}
-          <div class="small">Código: ${p.code}</div>
+          ${escapeHtml(p.name)}
+          <div class="small">Código: ${escapeHtml(p.code)}</div>
         </div>
-        <button onclick="removeFromCart('${p.id}')">Quitar</button>
+        <button type="button" onclick="removeFromCart('${escapeAttr(p.id)}')">Quitar</button>
       `;
       container.appendChild(div);
     });
@@ -752,7 +884,10 @@ function updateCartCounts(){
 }
 
 function sendCartToWhatsApp(){
-  if(!pedido.length) return alert('No hay productos en el carrito');
+  if(!pedido.length){
+    alert('No hay productos en el carrito');
+    return;
+  }
 
   const msg = encodeURIComponent(
     'Hola POGGY, quiero hacer pedido con los siguientes productos:\n' +
@@ -802,7 +937,33 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-searchInput.addEventListener('input', () => applyFilters());
+searchInput.addEventListener('input', applyFilters);
+
+function truncateText(text, max){
+  const value = String(text || '').trim();
+  if(value.length <= max) return value;
+  return value.slice(0, max).trim() + '...';
+}
+
+function escapeHtml(str){
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function escapeAttr(str){
+  return String(str || '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;');
+}
+
+window.addToCart = addToCart;
+window.removeFromCart = removeFromCart;
+
 loadProducts();
 </script>
 </body>
